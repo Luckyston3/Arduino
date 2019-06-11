@@ -4,7 +4,13 @@ int in3=9;
 int in4=8;
 int ena=13;
 int enb=12;
+int gl=6;
+int dl=7;
 int inter;
+int glvalue=0;
+int dlvalue=0;
+const int black_value = 2000;
+
 
 
 int speedPinA=13;
@@ -22,6 +28,7 @@ void setup()
   Serial.begin(9600);
   analogWrite(ena,255);
   analogWrite(enb,255);
+  Serial.println("WAYzard line value");
 
 }
 
@@ -50,15 +57,52 @@ void _mStop(int pin1,int pin2,int pin3,int pin4)
   digitalWrite(inl2, HIGH);
   
 }
+int readLineSensor(int sensorPin){
+ pinMode( sensorPin, OUTPUT );
+ digitalWrite( sensorPin, HIGH ); 
+ delayMicroseconds(10);
+ pinMode( sensorPin, INPUT );
+ long time = micros();
+ // schauen wie lange der Input auf HIGH ist, aber max. 3ms
+ while (digitalRead(sensorPin) == HIGH && micros() - time < 3000); 
+ int diff = micros() - time;
+ return diff;
+}
 
  
 void loop()
 {
   inter = digitalRead(2);
   Serial.println(inter);
+  glvalue = readLineSensor(gl);
+  dlvalue = readLineSensor(dl);
+  
+  
   if (inter == 1) {
     
-   _mGo(in1,in4);
+  Serial.print(glvalue);
+  Serial.print("; ");
+  Serial.println(dlvalue);
+  
+  _mGo(in1,in4);
+ 
+ 
+ // Rechter Sensor dunkel => nach Rechts drehen, damit Linie wieder mittig
+ if ((glvalue > black_value) && (dlvalue < black_value)) {
+ _mRight(in1,in2);
+ delay(5); 
+ }
+ 
+ // Linker Sensor dunkel => nach Links drehen, damit Linie wieder mittig
+ if ((glvalue > black_value) && (dlvalue < black_value)) {
+ _mLeft(in3,in4);
+ delay(5); 
+ }
+ 
+ // Beide Sensoren dunkel (z.B. Stopplinie) = Boxenstopp
+ if ((glvalue < black_value) && (dlvalue < black_value)) {
+ _mStop(in1,in2,in3,in4);;
+ }
   
   }
   else{
